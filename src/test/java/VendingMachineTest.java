@@ -48,6 +48,7 @@ public class VendingMachineTest {
 
         vendingMachine.addToTill(validCoin2);
         vendingMachine.addToTill(validCoin1);
+        vendingMachine.addToTill(validCoin1);
         vendingMachine.addToTill(validCoin3);
         vendingMachine.addToTill(validCoin2);
         vendingMachine.addToTill(validCoin3);
@@ -118,13 +119,24 @@ public class VendingMachineTest {
     }
 
     @Test
-    public void returnCorrectChange() {
+    public void returnNoChange() {
         vendingMachine.addProducts(crisps1);
         vendingMachine.addProducts(cola1);
         vendingMachine.addProducts(sweet1);
         vendingMachine.insertCoin(validCoin3);
 
         assertEquals(0, vendingMachine.getCoinCount());
+    }
+
+    @Test
+    public void returnCorrectChange() {
+        vendingMachine.addProducts(crisps1);
+        vendingMachine.addProducts(cola1);
+        vendingMachine.addProducts(sweet1);
+        vendingMachine.insertCoin(validCoin3);
+        vendingMachine.insertCoin(validCoin4);
+        vendingMachine.buy("A1");
+        assertEquals(3, vendingMachine.getChangePotCoinAmount());
     }
 
 }

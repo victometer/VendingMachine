@@ -15,6 +15,7 @@ public class VendingMachine {
     private ArrayList<Coin> validCoin;
     private ArrayList<Coin> till;
     private ArrayList<Coin> changePot;
+    ArrayList<Coin> coinsToGiveAsChange;
 
     public VendingMachine() {
         this.currentCostOfProduct = 0;
@@ -23,6 +24,7 @@ public class VendingMachine {
         this.productsInVendingMachine = new HashMap<>();
         this.till = new ArrayList<Coin>();
         this.changePot = new ArrayList<Coin>();
+        this.coinsToGiveAsChange = new ArrayList<Coin>();
     }
 
     public void addToTill(Coin coin){
@@ -90,20 +92,41 @@ public class VendingMachine {
         }
 
     private void giveChangeToCustomer(double changeAmountNeeded) {
-        for(Coin coin : till){
-            if(coin.getValue() == changeAmountNeeded){
-                changePot.add(till.remove(till.indexOf(coin)));
-            }
-            else{
-                
+
+        boolean changeToGive = false;
+        double changeLeft = changeAmountNeeded;
+
+        // works out what change can be given
+            while(changeToGive){
+                for (Coin coin : till){
+                    changeLeft -= coin.getValue();
+                    coinsToGiveAsChange.add(till.remove(till.indexOf(coin)));
+                    if (changeLeft == 0){
+                        changeToGive = true;
+                        giveChange();
+
+                    } else if (changeLeft < 0){ //will give too much change
+                        changeLeft += coin.getValue();
+                        till.add(coinsToGiveAsChange.remove(coinsToGiveAsChange.indexOf(coin))) ;
+                    }
             }
         }
+
     }
 
+    public void giveChange(){
+        for (Coin coin : coinsToGiveAsChange){
+            changePot.add(coinsToGiveAsChange.remove(coinsToGiveAsChange.indexOf(coin)));
+        }
+    }
 
     public int hasEnoughMoney(double valueOfCoinsInserted, double productPrice){
         return Double.compare(valueOfCoinsInserted, productPrice);
 
+    }
+
+    public int getChangePotCoinAmount(){
+        return changePot.size();
     }
 
     public void returnCoins() {
