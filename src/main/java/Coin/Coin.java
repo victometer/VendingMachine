@@ -1,14 +1,23 @@
 package Coin;
 
+import org.omg.CORBA.PUBLIC_MEMBER;
+
 public class Coin {
 
-    private double value;
+    private CoinType coinType;
 
-    public Coin(double value){
-        this.value = value;
+    public Coin(CoinType coinType){
+        this.coinType = coinType;
     }
 
-    public double getValue() {
-        return value;
+    public CoinType getCoinType() {
+        return coinType;
+    }
+    public int getCoinValue(){
+        return coinType.getValue();
+    }
+
+    public String toString(){
+        return coinType.name();
     }
 }

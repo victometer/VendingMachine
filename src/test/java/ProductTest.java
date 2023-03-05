@@ -14,14 +14,14 @@ public class ProductTest {
 
     @Before
     public void before(){
-        crisps1 = new Crisps(0.5, "Walkers");
-        cola1 = new Cola(1.0, "Coca Cola");
-        sweet1 = new Sweet(0.65, "Sugar Mamma");
+        crisps1 = new Crisps(50, "Walkers", 100);
+        cola1 = new Cola(100, "Coca Cola", 101);
+        sweet1 = new Sweet(65, "Sugar Mamma", 102);
     }
 
     @Test
     public void getProductPrice(){
-        assertEquals(0.5, crisps1.getPrice(), 0.0);
+        assertEquals(50, crisps1.getPrice());
     }
 
     @Test

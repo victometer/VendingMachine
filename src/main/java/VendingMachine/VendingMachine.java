@@ -1,135 +1,210 @@
 package VendingMachine;
-
+import Coin.CoinType;
 import Coin.Coin;
-import Interfaces.IBuyable;
-import Products.Crisps;
+import Products.Product;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 
 public class VendingMachine {
 
     private ArrayList<Coin> insertedCoins;
-    private HashMap<String, IBuyable> productsInVendingMachine;
-    private double currentCostOfProduct;
-    private ArrayList<Coin> validCoin;
+    private ArrayList<Product> productsInVendingMachine;
+    private int currentCostOfProduct;
     private ArrayList<Coin> till;
     private ArrayList<Coin> changePot;
-    ArrayList<Coin> coinsToGiveAsChange;
+    int startCode;
+    ArrayList<Coin> coinsToGiveAsChange; //an intermediary pot the machine has before adding to changePot
+    ArrayList<Product> dropBox;
 
     public VendingMachine() {
+        this.productsInVendingMachine = new ArrayList<Product>();
         this.currentCostOfProduct = 0;
         this.insertedCoins = new ArrayList<Coin>();
-        this.validCoin = new ArrayList<Coin>();
-        this.productsInVendingMachine = new HashMap<>();
-        this.till = new ArrayList<Coin>();
+        this.dropBox = new ArrayList<Product>();
+
         this.changePot = new ArrayList<Coin>();
-        this.coinsToGiveAsChange = new ArrayList<Coin>();
-    }
 
-    public void addToTill(Coin coin){
-        till.add(coin);
     }
+    //how to make it so any coin that doesn't match the coinType returns to the customer? Atm the functions are only taking a parameter type Coin
 
-    public String insertCoin(Coin insertedCoin){
-        for (Coin coin : validCoin) {
-            if (insertedCoin.getValue() == coin.getValue()) {
-                insertedCoins.add(coin);
-                return "Coin accepted";
-            }
-        }
+    public void addCoin(Coin coin){
+        insertedCoins.add(coin);
+    }
+    public String coinSorting(Coin insertedCoin) {
+        if (insertedCoin.getCoinValue() != 1 && insertedCoin.getCoinValue() != 2 && insertedCoin.getCoinType() == insertedCoin.getCoinType()) {
+            returnCoins(insertedCoin);
+            return "Coin accepted";
+    }
         return "Invalid coin";
     }
 
-
-    public void addValidCoin(Coin coin){
-        validCoin.add(coin);
+    public int returnCoins(Coin invalidCoin) {
+        for (Coin coin : insertedCoins){
+            if (coin.getCoinValue() == 1 || coin.getCoinValue() == 2)
+            {
+                insertedCoins.remove(invalidCoin);
+                changePot.add(invalidCoin);
+            }
+        }
+        return changePot.size();
     }
-
 
     public int getCoinCount() {
         return insertedCoins.size();
     }
 
-    public String generateCode(){
-        String letter = "A";
-        return letter + (productsInVendingMachine.size() +1);
+
+    public void addProducts(Product item) {
+        productsInVendingMachine.add(item);
     }
-    public void addProducts(IBuyable item) {
-        productsInVendingMachine.put(generateCode(), item);
+
+    public void addForCustomer(Product item){
+        dropBox.add(item);
+    }
+
+    public int addProductToDropBox(){
+        return dropBox.size();
     }
 
     public int getProductCount() {
         return productsInVendingMachine.size();
     }
 
-    public IBuyable getProductByCode(String code){
-       return productsInVendingMachine.get(code);
+
+    public int getProductByCode( int code){
+        for(Product product : productsInVendingMachine){
+            if(product.getCode() == code){
+                productsInVendingMachine.remove(product);
+                dropBox.add(product); //maybe add a canAfford condition
+            }
+        }
+        return code;
     }
 
-    public IBuyable giveProductToCustomer(String code){
-        return productsInVendingMachine.remove(code);
+    public int insertedCoinValue() {
+        int totalValue = 0;
+        for (Coin coin : insertedCoins) {
+            totalValue += coin.getCoinValue();
+        }
+        return totalValue;
     }
-    //assuming the customer has put in the coins
-    public String buy(String code) {
-        IBuyable product = getProductByCode(code);
+
+    public String cantBuy(Product product){
+            if(insertedCoinValue() < product.getPrice()){
+                return "Please add " + (product.getPrice() - insertedCoinValue());
+        }
+        return "Transaction failed";
+    }
+
+    public String buy(Product product){
+        getProductByCode(product.getCode());
         currentCostOfProduct = product.getPrice();
-        double valueOfCoinsInserted = 0;
+        if(insertedCoinValue() == product.getPrice()){
+            dropBox.add(product);
+            currentCostOfProduct = 0;
+            return "Enjoy";
+        } else if (insertedCoinValue() > product.getPrice()){
+            giveChange(product);
+            currentCostOfProduct = 0;
+            return "Please take your change";
 
-        for (Coin coin : insertedCoins){
-            valueOfCoinsInserted += coin.getValue();
         }
-        if(valueOfCoinsInserted >= currentCostOfProduct){
-            giveProductToCustomer(code);
-            if(valueOfCoinsInserted > currentCostOfProduct){
-                giveChangeToCustomer((valueOfCoinsInserted - currentCostOfProduct));
-            }
-            return "Transaction complete" ;
-        } else if (hasEnoughMoney(valueOfCoinsInserted, currentCostOfProduct) < 0) {
-             return "Please add " + (currentCostOfProduct - valueOfCoinsInserted);
-        }
-        return "Please add money";
-        }
+    return "Transaction failed";
+    }
 
-    private void giveChangeToCustomer(double changeAmountNeeded) {
-
-        boolean changeToGive = false;
-        double changeLeft = changeAmountNeeded;
-
-        // works out what change can be given
-            while(changeToGive){
-                for (Coin coin : till){
-                    changeLeft -= coin.getValue();
-                    coinsToGiveAsChange.add(till.remove(till.indexOf(coin)));
-                    if (changeLeft == 0){
-                        changeToGive = true;
-                        giveChange();
-
-                    } else if (changeLeft < 0){ //will give too much change
-                        changeLeft += coin.getValue();
-                        till.add(coinsToGiveAsChange.remove(coinsToGiveAsChange.indexOf(coin))) ;
+    public String giveChange(Product product) {
+        changePot = new ArrayList<>();
+            if (insertedCoinValue() > product.getPrice()){
+                int change = insertedCoinValue() - product.getPrice();
+                while (change > 0){
+                    if (change >= CoinType.ONEPOUND.getValue()){
+                        changePot.add(new Coin(CoinType.ONEPOUND));
+                        change -= CoinType.ONEPOUND.getValue();
                     }
+                    else if(change >= CoinType.FIFTYPENCE.getValue()){
+                        changePot.add(new Coin(CoinType.FIFTYPENCE));
+                        change -= CoinType.FIFTYPENCE.getValue();
+                    }
+                    else if(change >= CoinType.TWENTYPENCE.getValue()){
+                        changePot.add(new Coin(CoinType.TWENTYPENCE));
+                        change -= CoinType.TWENTYPENCE.getValue();
+                    }
+                    else if(change >= CoinType.TENPENCE.getValue()){
+                        changePot.add(new Coin(CoinType.TENPENCE));
+                        change -= CoinType.TENPENCE.getValue();
+                    }
+                    else if(change >= CoinType.FIVEPENCE.getValue()){
+                        changePot.add(new Coin(CoinType.FIVEPENCE));
+                        change -= CoinType.FIVEPENCE.getValue();
+                    }
+                }
             }
-        }
+
+
+    return changePot.toString();
 
     }
 
-    public void giveChange(){
-        for (Coin coin : coinsToGiveAsChange){
-            changePot.add(coinsToGiveAsChange.remove(coinsToGiveAsChange.indexOf(coin)));
-        }
-    }
-
-    public int hasEnoughMoney(double valueOfCoinsInserted, double productPrice){
-        return Double.compare(valueOfCoinsInserted, productPrice);
+    public void giveCorrectChange(){
 
     }
+//
+//    public String buy(int code) {
+//        Product product = getProductByCode(code);
+//        currentCostOfProduct = product.getPrice();
+//        int valueOfCoinsInserted = 0;
+//
+//        for (Coin coin : insertedCoins){
+//            valueOfCoinsInserted += coin.getValue();
+//        }
+//        if(valueOfCoinsInserted >= currentCostOfProduct){
+//            giveProductToCustomer(code);
+//            if(valueOfCoinsInserted > currentCostOfProduct){
+//                giveChangeToCustomer((valueOfCoinsInserted - currentCostOfProduct));
+//            }
+//            return "Transaction complete" ;
+//        } else if ((valueOfCoinsInserted - currentCostOfProduct) < 0) {
+//             return "Please add " + (currentCostOfProduct - valueOfCoinsInserted);
+//        }
+////        returnInvalidCoin(coin);
+//        return "Please add money";
+//        }
 
-    public int getChangePotCoinAmount(){
-        return changePot.size();
-    }
+//    public void giveChange(){
+//        for (Coin coin : coinsToGiveAsChange){
+//            changePot.add(coinsToGiveAsChange.remove(coinsToGiveAsChange.indexOf(coin)));
+//        }
+//    }
+//
+//    public int getChangePotCoinAmount(){
+//        return changePot.size();
+//    }
+//
+//
+//    private void giveChangeToCustomer(int changeAmountNeeded) {
+//
+//        boolean changeToGive = false;
+//        int changeLeft = changeAmountNeeded;
+//
+//        // works out what change can be given
+//            while(changeToGive){
+//                for (Coin coin : till){
+//                    changeLeft -= coin.getValue();
+//                    coinsToGiveAsChange.add(till.remove(till.indexOf(coin)));
+//                    if (changeLeft == 0){
+//                        changeToGive = true;
+//                        giveChange();
+//
+//                    } else if (changeLeft < 0){ //will give too much change
+//                        changeLeft += coin.getValue();
+//                        till.add(coinsToGiveAsChange.remove(coinsToGiveAsChange.indexOf(coin))) ;
+//                    }
+//            }
+//        }
+//
+//    }
 
-    public void returnCoins() {
-        insertedCoins.clear();
-    }
+
+
 }

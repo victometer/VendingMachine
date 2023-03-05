@@ -2,7 +2,7 @@ package Products;
 
 public class Sweet extends Product {
 
-    public Sweet(double price, String brand){
-        super(price, brand);
+    public Sweet(int price, String brand, int code){
+        super(price, brand, code);
     }
 }
